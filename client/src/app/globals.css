@@ -1,0 +1,178 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 192, 98%, 17%;
+    --foreground: 192, 100%, 25%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    --primary: 0, 0%, 100%;
+    --primary-foreground: 0, 0%, 80%;
+
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 169, 56%, 70%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
+
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  .border-gradient {
+    height: 2px;
+    width: 100%;
+    background: linear-gradient(
+      90deg,
+      #fde68a 26.57%,
+      rgba(255, 233, 173, 0) 95.13%
+    );
+  }
+
+  .play-button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 18px;
+    border: 1px solid #92cad9;
+    background: #fff;
+    box-shadow: 0px 4px 14px 0px rgba(0, 0, 0, 0.25);
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .h-assessment {
+    height: calc(100vh - 64px);
+  }
+
+  .w-answer {
+    width: calc(100% - 40px);
+  }
+
+  .bg-stats {
+    background:
+      url("/stars.png") no-repeat left top,
+      linear-gradient(180deg, #014455 0%, #278990 63.41%, #bdd9de 142.75%);
+  }
+
+  .progress-blocks {
+    background: linear-gradient(159.98deg, #84e6bb 13.35%, #006680 129.98%);
+  }
+
+  .card-shadow {
+    box-shadow: 0px 4px 18.799999237060547px 0px #8080801f;
+  }
+
+  .my-rank-shadow {
+    box-shadow: 0px -16px 21px 0px #0000001a;
+  }
+
+  .w-inherit {
+    width: inherit;
+  }
+
+  .bg-more {
+    background:
+      url("/bg-more-profile.svg") no-repeat left top,
+      linear-gradient(84.15deg, #00667f 22.27%, #37c8ab 178.89%);
+  }
+
+  .progress-ring-circle {
+    stroke-dasharray: 400, 400;
+    transition: stroke-dashoffset 0.35s;
+    transform: rotate(-90deg);
+    transform-origin: 50% 50%;
+  }
+
+  .input-shadow {
+    box-shadow: 0px 1px 2px 0px #1018280d;
+  }
+
+  .h-profile {
+    height: calc(100% - 65px);
+  }
+
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    color: rgba(0, 0, 0, 0);
+    opacity: 1;
+    display: block;
+    background: url("/calendar.svg") no-repeat;
+    width: 20px;
+    height: 20px;
+    left: 0;
+    position: absolute;
+    left: 90%;
+  }
+
+  .post-q-scroll {
+    scroll-padding-top: 50px;
+  }
+
+  .bg-ask-aba {
+    background: linear-gradient(187.03deg, #84e6bb -46.84%, #006680 96.79%);
+  }
+}
