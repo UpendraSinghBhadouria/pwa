@@ -1,0 +1,669 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["pwa"]
+}
+
+model User {
+  id                    Int                     @id @default(autoincrement())
+  phoneNumber           String                  @unique // with dialCode
+  role                  Role                    @default(JOB_SEEKER)
+  isPhoneNumberVerified Boolean                 @default(false)
+  isNewUser             Boolean                 @default(true) // if new user then store onboarding slug
+  isActive              Boolean                 @default(true)
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
+  session               Session[]
+  loginAttempts         LoginAttempts[]
+  profile               Profile?
+  onBoarding            OnBoarding?
+  userS1QuestionSetting UserS1QuestionSetting[]
+  userQAHistory         UserQAHistory[]
+  rewardHistory         RewardHistory[]
+  streakHistory         StreakHistory[]
+  stageHistory          StageHistory[]
+
+  @@schema("pwa")
+}
+
+enum Role {
+  JOB_SEEKER
+  EMPLOYER
+
+  @@schema("pwa")
+}
+
+// Session Management for security and tracking
+model Session {
+  id          Int       @id @default(autoincrement())
+  user        User      @relation(fields: [userId], references: [id])
+  userId      Int
+  ipAddress   String
+  userAgent   String
+  token       String?   @unique // NOTE: make token and expiresAt field null when a new session is created
+  loggedOutAt DateTime? // either the token expires or the user logs out
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  expiresAt   DateTime
+
+  @@schema("pwa")
+}
+
+// Audit Logging for security monitoring
+model LoginAttempts {
+  id        Int                 @id @default(autoincrement())
+  user      User                @relation(fields: [userId], references: [id])
+  userId    Int
+  email     String
+  status    LoginAttemptsStatus
+  createdAt DateTime            @default(now())
+
+  @@schema("pwa")
+}
+
+enum LoginAttemptsStatus {
+  SUCCESS
+  FAILURE
+
+  @@schema("pwa")
+}
+
+model OnBoarding {
+  id        Int      @id @default(autoincrement())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int      @unique
+  slug      String?
+  details   Json[]
+  electives Json[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@schema("pwa")
+}
+
+model Profile {
+  id                   Int                    @id @default(autoincrement())
+  user                 User                   @relation(fields: [userId], references: [id])
+  userId               Int                    @unique
+  avatar               String?
+  username             String?                @unique
+  fullName             String?
+  firstName            String
+  lastName             String
+  bio                  String?
+  email                String
+  isEmailVerified      Boolean                @default(false)
+  dob                  DateTime?
+  gender               ProfileGender?
+  resume               String?
+  referredBy           Int? // user id
+  referredUsers        Json[] // [{ avatar: String?, firstName: String, lastName: String }]
+  profileCompletion    String? // formula: (noOfRequireFieldsFilled / totalNoOfRequiredFields * 100)%
+  isProfileHidden      Boolean                @default(false)
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+  address              Address?
+  workExperience       WorkExperience[]
+  project              Project[]
+  licenseCertification LicenseCertification[]
+  education            Education[]
+  awardAchievement     AwardAchievement[]
+
+  @@schema("pwa")
+}
+
+enum ProfileGender {
+  MALE
+  FEMALE
+  RATHER_NOT_TO_SAY
+
+  @@schema("pwa")
+}
+
+model Address {
+  id           Int      @id @default(autoincrement())
+  profile      Profile  @relation(fields: [profileId], references: [id])
+  profileId    Int      @unique
+  line1        String?
+  country      String
+  state        String
+  cityDistrict String
+  pincode      String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@schema("pwa")
+}
+
+model WorkExperience {
+  id        Int       @id @default(autoincrement())
+  profile   Profile   @relation(fields: [profileId], references: [id])
+  profileId Int
+  title     String
+  company   String
+  from      DateTime
+  to        DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@schema("pwa")
+}
+
+model Project {
+  id          Int      @id @default(autoincrement())
+  profile     Profile  @relation(fields: [profileId], references: [id])
+  profileId   Int
+  title       String
+  description String
+  url         String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@schema("pwa")
+}
+
+model LicenseCertification {
+  id        Int      @id @default(autoincrement())
+  profile   Profile  @relation(fields: [profileId], references: [id])
+  profileId Int
+  name      String
+  provider  String
+  from      DateTime
+  to        DateTime
+  url       String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@schema("pwa")
+}
+
+model Education {
+  id            Int       @id @default(autoincrement())
+  profile       Profile   @relation(fields: [profileId], references: [id])
+  profileId     Int
+  schoolCollage String
+  university    String?
+  degree        String
+  from          DateTime
+  to            DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@schema("pwa")
+}
+
+model AwardAchievement {
+  id          Int      @id @default(autoincrement())
+  profile     Profile  @relation(fields: [profileId], references: [id])
+  profileId   Int
+  title       String
+  description String
+  url         String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@schema("pwa")
+}
+
+model Tier1 {
+  id                         Int                          @id @default(autoincrement())
+  name                       String                       @unique
+  foregroundColor            String
+  backgroundColor            String
+  isActive                   Boolean                      @default(true)
+  createdAt                  DateTime                     @default(now())
+  updatedAt                  DateTime                     @updatedAt
+  tier2                      Tier2[]
+  question                   Question[]
+  next360DaysQuestionSetting Next360DaysQuestionSetting[]
+  userQAHistory              UserQAHistory[]
+
+  @@schema("pwa")
+}
+
+model Tier2 {
+  id                         Int                         @id @default(autoincrement())
+  name                       String                      @unique
+  tier1                      Tier1                       @relation(fields: [tier1Id], references: [id])
+  tier1Id                    Int
+  isActive                   Boolean                     @default(true)
+  createdAt                  DateTime                    @default(now())
+  updatedAt                  DateTime                    @updatedAt
+  tier3                      Tier3[]
+  question                   Question[]
+  next360DaysQuestionSetting Next360DaysQuestionSetting?
+  userQAHistory              UserQAHistory[]
+
+  @@schema("pwa")
+}
+
+model Tier3 {
+  id            Int             @id @default(autoincrement())
+  name          String          @unique
+  tier2         Tier2           @relation(fields: [tier2Id], references: [id])
+  tier2Id       Int
+  isActive      Boolean         @default(true)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  question      Question[]
+  userQAHistory UserQAHistory[]
+
+  @@schema("pwa")
+}
+
+// Question rule for first 5 days
+model S1QuestionSetting {
+  id             Int  @id @default(autoincrement())
+  day            Int  @unique
+  selection1     Json // {"tier2Id": Int, tier3Count: Int}
+  selection2     Json // {"tier2Id": Int, tier3Count: Int}
+  selection3     Json // {"tier2Id": Int, tier3Count: Int}
+  fs             Int?
+  as             Int?
+  cs             Int?
+  es             Int?
+  ts             Int?
+  ss             Int?
+  totalQuestions Int  @default(20)
+
+  @@schema("pwa")
+}
+
+// User question rule for first 5 days
+model UserS1QuestionSetting {
+  id         Int  @id @default(autoincrement())
+  user       User @relation(fields: [userId], references: [id])
+  userId     Int
+  day        Int  @unique
+  selection1 Json // {"tier2Id": Int, tier3Id: Int[]}
+  selection2 Json // {"tier2Id": Int, tier3Id: Int[]}
+  selection3 Json // {"tier2Id": Int, tier3Id: Int[]}
+
+  @@schema("pwa")
+}
+
+// Question rule for next 360 days
+model Next360DaysQuestionSetting {
+  id                       Int   @id @default(autoincrement())
+  tier1                    Tier1 @relation(fields: [tier1Id], references: [id])
+  tier1Id                  Int
+  tier2                    Tier2 @relation(fields: [tier2Id], references: [id])
+  tier2Id                  Int   @unique
+  totalTier3Topics         Int
+  totalTier3TopicSelection Int
+  totalTier2Questions      Int
+
+  @@schema("pwa")
+}
+
+model QuestionTag {
+  id   Int    @id @default(autoincrement())
+  name String @unique
+
+  @@schema("pwa")
+}
+
+model Question {
+  id             Int             @id @default(autoincrement())
+  type           QuestionType
+  tier1          Tier1           @relation(fields: [tier1Id], references: [id])
+  tier1Id        Int
+  tier2          Tier2           @relation(fields: [tier2Id], references: [id])
+  tier2Id        Int
+  tier3          Tier3           @relation(fields: [tier3Id], references: [id])
+  tier3Id        Int
+  staticDL       Int // 1-5 (staticDL = static difficulty level)
+  dynamicDL      Int? // 1-5 (dynamicDL = dynamic difficulty level)
+  tags           Int[]
+  isPublished    Boolean         @default(false) // save as draft
+  avgTime        Decimal?        @db.Decimal(3, 1) // e.g., 12.3 -> sec
+  accuracy       Int? // e.g., 98 -> %
+  timeLimit      Int
+  isActive       Boolean         @default(true)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  mCQQA          MCQQA?
+  // MCQImageQA     MCQImageQA?
+  // MCQAudioQA     MCQAudioQA?
+  // MCQVideoQA     MCQVideoQA?
+  questionTrivia QuestionTrivia?
+  qAHistory      QAHistory[]
+  userQAHistory  UserQAHistory[]
+
+  @@schema("pwa")
+}
+
+enum QuestionType {
+  MCQ
+  // MCQ_IMAGE
+  // MCQ_AUDIO
+  // MCQ_VIDEO
+  // PSYCHOMETRIC
+  // TRUE_FALSE  
+
+  @@schema("pwa")
+}
+
+model MCQQA {
+  id         Int      @id @default(autoincrement())
+  question   Question @relation(fields: [questionId], references: [id])
+  questionId Int      @unique
+  text       String   @unique
+  options    Json[] // [{id: uuid(), text: String, position: Int?}]
+  answer     Int      @unique // option id
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@schema("pwa")
+}
+
+// model MCQImageQA {
+//   id         Int      @id @default(autoincrement())
+//   question   Question @relation(fields: [questionId], references: [id])
+//   questionId Int      @unique
+//   text       String   @unique
+//   url        String
+//   options    Json[] // [{id: uuid(), text: String, position: Int?}]
+//   answer     Int      @unique // option id
+//   createdAt  DateTime @default(now())
+//   updatedAt  DateTime @updatedAt
+
+//   @@schema("pwa")
+// }
+
+// model MCQAudioQA {
+//   id         Int      @id @default(autoincrement())
+//   question   Question @relation(fields: [questionId], references: [id])
+//   questionId Int      @unique
+//   text       String   @unique
+//   url        String
+//   options    Json[] // [{id: uuid(), text: String, position: Int?}]
+//   answer     Int      @unique // option id
+//   createdAt  DateTime @default(now())
+//   updatedAt  DateTime @updatedAt
+
+//   @@schema("pwa")
+// }
+
+// model MCQVideoQA {
+//   id         Int      @id @default(autoincrement())
+//   question   Question @relation(fields: [questionId], references: [id])
+//   questionId Int      @unique
+//   text       String   @unique
+//   url        String
+//   options    Json[] // [{id: uuid(), text: String, position: Int?}]
+//   answer     Int      @unique // option id
+//   createdAt  DateTime @default(now())
+//   updatedAt  DateTime @updatedAt
+
+//   @@schema("pwa")
+// }
+
+// model PsychometricQA {
+//   id         Int      @id @default(autoincrement())
+//   question   Question @relation(fields: [questionId], references: [id])
+//   questionId Int
+//   text       String   @unique
+//   url        String
+//   options    Json[] // [{id: uuid(), text: String, position: Int?}]
+//   answer     Int      @unique // option id
+//   createdAt  DateTime @default(now())
+//   updatedAt  DateTime @updatedAt
+
+//   @@schema("pwa")
+// }
+
+// model TrueFalseQA {
+//   id         Int      @id @default(autoincrement())
+//   question   Question @relation(fields: [questionId], references: [id])
+//   questionId Int      @unique
+//   text       String   @unique
+//   options    Json[] // [{id: uuid(), text: Boolean}]
+//   answer     Int      @unique // option id
+//   createdAt  DateTime @default(now())
+//   updatedAt  DateTime @updatedAt
+
+//   @@schema("pwa")
+// }
+
+model TriviaSetting {
+  id                       Int      @id @default(autoincrement())
+  correctResponseHeading   String[]
+  incorrectResponseHeading String[]
+  contentHeading           String?
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+
+  @@schema("pwa")
+}
+
+model QuestionTrivia {
+  id         Int      @id @default(autoincrement())
+  question   Question @relation(fields: [questionId], references: [id])
+  questionId Int      @unique
+  imageUrl   String
+  content    String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@schema("pwa")
+}
+
+// this history will be created on question update/delete
+model QAHistory {
+  id          Int      @id @default(autoincrement())
+  question    Question @relation(fields: [questionId], references: [id])
+  questionId  Int
+  text        String?
+  url         String?
+  options     Json[] // [{text: String, position: Int?}]
+  answer      String?
+  staticDL    Int?
+  tags        Int[]
+  isPublished Boolean?
+  createdAt   DateTime @default(now())
+
+  @@schema("pwa")
+}
+
+// Entry will be created at PreQ and updated at InQ & PostQ
+model UserQAHistory {
+  id                Int          @id @default(autoincrement())
+  user              User         @relation(fields: [userId], references: [id])
+  userId            Int
+  day               Int          @default(0)
+  stageSetting      StageSetting @relation(fields: [stageId], references: [id])
+  stageId           Int
+  gradeSetting      GradeSetting @relation(fields: [gradeId], references: [id])
+  gradeId           Int
+  tier1             Tier1        @relation(fields: [tier1Id], references: [id])
+  tier1Id           Int
+  tier2             Tier2        @relation(fields: [tier2Id], references: [id])
+  tier2Id           Int
+  tier3             Tier3        @relation(fields: [tier3Id], references: [id])
+  tier3Id           Int
+  testType          TestType
+  question          Question     @relation(fields: [questionId], references: [id])
+  questionId        Int
+  currentQuestionNo Int
+  rewardsCollected  Int[] // powerup ids
+  rewardApplied     Int // powerup id
+  noOfAttempts      Int          @default(1) // because a time machine wildcard can ask same incorrect question twice
+  timeSpent         Int?
+  isQuestionSkipped Boolean      @default(false)
+  isLiked           Boolean?
+  dislikeFeedback   String?
+  isCorrect         Boolean?
+  score             Int
+  totalScore        Int
+  // ranking           String // Ranking: Global -> continent -> national -> zonal -> regional-> local (pincode)
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  @@schema("pwa")
+}
+
+enum TestType {
+  MIXED_MODE
+
+  @@schema("pwa")
+}
+
+model StageHistory {
+  id                  Int          @id @default(autoincrement())
+  user                User         @relation(fields: [userId], references: [id])
+  userId              Int
+  day                 Int
+  stageSetting        StageSetting @relation(fields: [stageId], references: [id])
+  stageId             Int
+  gradeSetting        GradeSetting @relation(fields: [gradeId], references: [id])
+  gradeId             Int
+  tier1               Int[] // tier1 ids
+  tier2               Int[] // tier2 ids
+  tier3               Int[] // tier3 ids
+  testStatus          TestStatus
+  questionTypes       String[]
+  totalQuestions      Int
+  totalCorrectAnswers Int
+  totalTimeSpent      Int
+  rewardsCollected    Int[] // powerup ids
+  rewardConsumed      Int[] // powerup ids
+  repeatedQuestion    Int
+  totalScore          Int
+  // ranking             String // Ranking: Global -> continent -> national -> zonal -> regional-> local (pincode)
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+
+  @@schema("pwa")
+}
+
+enum TestStatus {
+  IN_PROGRESS
+  COMPLETED
+
+  @@schema("pwa")
+}
+
+// history for gaining and losing streak
+// -> When a user completes a session do streak addition
+// Streak addition: when a user completes a session in single day
+// -> when a user opens a app for first time in a day (use localstorage)
+// check for streak deletion for previous day 
+// Streak deletion: when a user don't complete a session each day (soft delete)
+model StreakHistory {
+  id        Int      @id @default(autoincrement())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+  streak    Int
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@schema("pwa")
+}
+
+model PowerUpSetting {
+  id       Int             @id @default(autoincrement())
+  type     PowerUpType
+  text     String          @unique // +4 Seconds, +8 Seconds, Twice Up etc
+  codeName PowerUpCodeName @unique // these values will be used in calculation in backend
+
+  @@schema("pwa")
+}
+
+enum PowerUpType {
+  REWARD
+  WILDCARD
+
+  @@schema("pwa")
+}
+
+enum PowerUpCodeName {
+  PLUS_4_SECONDS
+  PLUS_8_SECONDS
+  TWICE_UP
+  THRICE_UP
+  DICE_UP
+  ASK_ABA
+  BETTER_HALF
+  CHOSEN_ONE
+  DOUBLE_EDGE
+  TIME_MACHINE
+
+  @@schema("pwa")
+}
+
+// rewards distribution rule based on streak
+model RewardSetting {
+  id            Int             @id @default(autoincrement())
+  streak        Int             @unique
+  text          String // Any 3 Power Ups, 1 Day Streak Sheild etc.
+  type          RewardType
+  quantity      Int
+  isConsumed    Boolean         @default(false)
+  isActive      Boolean         @default(true)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  rewardHistory RewardHistory[]
+
+  @@schema("pwa")
+}
+
+enum RewardType {
+  POWER_UPS
+  STREAK_SHIELD
+  VIRTUAL_COINS
+  LEAGUE_IN_PASS
+  LEAGUE_UP_PASS
+  STREAK_BADGE
+
+  @@schema("pwa")
+}
+
+// history for reward collection and consumption
+model RewardHistory {
+  id              Int           @id @default(autoincrement())
+  user            User          @relation(fields: [userId], references: [id])
+  userId          Int
+  rewardSetting   RewardSetting @relation(fields: [rewardSettingId], references: [id])
+  rewardSettingId Int
+  powerUpIds      Json[] // [{ id: Int, isConsumed: Boolean, nextIn: Int }]
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@schema("pwa")
+}
+
+model StageSetting {
+  id            Int             @id @default(autoincrement())
+  level         String          @unique
+  startDay      Int
+  endDay        Int
+  name          String
+  days          Int
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  userQAHistory UserQAHistory[]
+  stageHistory  StageHistory[]
+
+  @@schema("pwa")
+}
+
+model GradeSetting {
+  id            Int             @id @default(autoincrement())
+  level         String          @unique
+  name          String          @unique
+  minPercentage Int
+  maxPercentage Int
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  userQAHistory UserQAHistory[]
+  stageHistory  StageHistory[]
+
+  @@schema("pwa")
+}
